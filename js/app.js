@@ -4,6 +4,12 @@ const studentIdInput = document.getElementById('student-id');
 const statusMessage = document.getElementById('status-message');
 const canvas = document.getElementById('overlay');
 
+// Load saved ID
+const savedId = localStorage.getItem('student-id-val');
+if (savedId) {
+    studentIdInput.value = savedId;
+}
+
 let faceMatcher;
 let stream;
 let currentMentor = "Unknown";
@@ -114,12 +120,22 @@ function startRecognition() {
 }
 
 captureBtn.addEventListener('click', async () => {
+    // 0. Check Mentor
+    if (!currentMentor || currentMentor === 'Unknown') {
+        alert("Please take attendance with your mentor.");
+        statusMessage.innerText = "Attendance blocked: Mentor unknown.";
+        return;
+    }
+
     // 1. Validate inputs
     const studentId = studentIdInput.value.trim();
     if (!studentId) {
         alert("Please enter Student ID.");
         return;
     }
+
+    // Save ID
+    localStorage.setItem('student-id-val', studentId);
 
     // 2. Capture Image
     const captureCanvas = document.createElement('canvas');
@@ -151,7 +167,7 @@ captureBtn.addEventListener('click', async () => {
 
     // 4. Send to Google Sheets (GAS)
     // We need the Web App URL. For now we prompt or mock.
-    const gasUrl = "https://script.google.com/macros/s/AKfycbyNEjdZsFvx2X1QFmjMmr7xwcqcZm2wEIpFlBmIIWahM6UZJd_4YMrpUkBA-3BpWD79Nw/exec";
+    const gasUrl = "https://script.google.com/macros/s/AKfycbzs5vbh5Nt40YGMwq3Od1afMCFWLXUXkcO-SQZOHYfWIaS_EovHIAORreIHdLEQqwHaJA/exec";
 
     statusMessage.innerText = "Submitting attendance...";
     captureBtn.disabled = true; // Disable button

@@ -5,7 +5,7 @@ function doPost(e) {
         const imageBase64 = data.image; // Expecting base64 string
 
         // CONFIGURATION
-        const FOLDER_ID = "1V4uFTdIWa-ue3z7d1JUe8daUApNIiSc2"; // Updated by user
+        const FOLDER_ID = "1V4uFTdIWa-ue3z7d1JUe8daUApNIiSc2";
         const SHEET_NAME = "Sheet1";
 
         const ss = SpreadsheetApp.getActiveSpreadsheet();
@@ -14,10 +14,9 @@ function doPost(e) {
 
         const dataRange = sheet.getDataRange();
         const values = dataRange.getValues();
-        const headers = values[0];
+        const headers = values[0]; // Row 1
 
         // 1. Find Student Row
-        // Assuming ID is in Column B (index 1) based on user prompt "Name ID Date Link"
         let rowIndex = -1;
         for (let i = 1; i < values.length; i++) {
             if (values[i][1].toString().trim() === studentId) {
@@ -30,46 +29,45 @@ function doPost(e) {
             return ContentService.createTextOutput("Error: Student ID not found");
         }
 
-        // 2. Handle Date Column (Robust Check)
+        // 2. Handle Date Column (STRICT CHECK)
         const today = new Date();
-        const dateString = (today.getMonth() + 1) + '/' + today.getDate() + '/' + today.getFullYear();
+        // Format: M/d/yyyy (no leading zeros usually in Sheets default, but we'll stick to a standard)
+        // Actually, Sheets often converts to Date objects. 
+        // We will use Utilities.formatDate to match what we write.
+        const TIMEZONE = ss.getSpreadsheetTimeZone();
+        const dateString = Utilities.formatDate(today, TIMEZONE, "M/d/yyyy");
 
         let dateColIndex = -1;
 
-        // Check headers safely
         for (let j = 0; j < headers.length; j++) {
             let cellVal = headers[j];
             let cellDateStr = "";
 
             if (Object.prototype.toString.call(cellVal) === '[object Date]') {
-                // It's a date object, format it
-                cellDateStr = (cellVal.getMonth() + 1) + '/' + cellVal.getDate() + '/' + cellVal.getFullYear();
+                cellDateStr = Utilities.formatDate(cellVal, TIMEZONE, "M/d/yyyy");
             } else {
-                // It's a string or other
                 cellDateStr = cellVal.toString();
             }
 
+            // Loose comparison for single digit days/months if needed, but usually exact match works if format aligns
             if (cellDateStr === dateString) {
                 dateColIndex = j;
                 break;
             }
         }
 
-        // If still not found, create new column
         if (dateColIndex === -1) {
             dateColIndex = headers.length;
-            sheet.getRange(1, dateColIndex + 1).setValue(dateString);
+            sheet.getRange(1, dateColIndex + 1).setValue(dateString); // Write string
         }
 
         // 3. Mark Attendance
         sheet.getRange(rowIndex + 1, dateColIndex + 1).setValue("Present");
 
         // 4. Handle Image logic (Replace old image)
-        // Assuming "Link" is in Column C (index 2) - based on prompt "Name ID Link"
-        const LINK_COL_INDEX = 2;
+        const LINK_COL_INDEX = 2; // Column C
         const currentLink = values[rowIndex][LINK_COL_INDEX];
 
-        // Delete old file if exists
         if (currentLink && currentLink.includes("drive.google.com")) {
             try {
                 const fileId = currentLink.match(/[-\w]{25,}/);
@@ -77,7 +75,7 @@ function doPost(e) {
                     DriveApp.getFileById(fileId[0]).setTrashed(true);
                 }
             } catch (err) {
-                Logger.log("Could not delete old file: " + err);
+                Logger.log("Err deleting: " + err);
             }
         }
 
@@ -88,10 +86,8 @@ function doPost(e) {
 
         const folder = DriveApp.getFolderById(FOLDER_ID);
         const file = folder.createFile(blob);
-        const fileUrl = file.getUrl();
 
-        // Update Link Column
-        sheet.getRange(rowIndex + 1, LINK_COL_INDEX + 1).setValue(fileUrl);
+        sheet.getRange(rowIndex + 1, LINK_COL_INDEX + 1).setValue(file.getUrl());
 
         return ContentService.createTextOutput("Success");
 
