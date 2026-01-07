@@ -124,18 +124,16 @@ captureBtn.addEventListener('click', async () => {
     captureCanvas.height = video.videoHeight;
     captureCanvas.getContext('2d').drawImage(video, 0, 0);
 
-    // High Res (Original)
-    const imageBase64 = captureCanvas.toDataURL('image/png');
-
-    // Low Res (for preview/thumbnail if needed, but we upload high res to drive usually)
-    // The requirement said "store a low-resolution image (under 5KB)". 
-    // We can resize here.
-    const lowResCanvas = document.createElement('canvas');
-    const scaleFactor = 0.2; // roughly
-    lowResCanvas.width = video.videoWidth * scaleFactor;
-    lowResCanvas.height = video.videoHeight * scaleFactor;
-    lowResCanvas.getContext('2d').drawImage(video, 0, 0, lowResCanvas.width, lowResCanvas.height);
-    const lowResBase64 = lowResCanvas.toDataURL('image/jpeg', 0.5);
+    // 3. Compress Image to < 10KB
+    let lowResBase64;
+    try {
+        lowResBase64 = await compressImageToSize(captureCanvas, 10 * 1024); // 10KB limit
+        console.log("Compressed image size:", Math.round(lowResBase64.length * 0.75 / 1024), "KB");
+    } catch (err) {
+        console.error("Compression failed:", err);
+        statusMessage.innerText = "Error processing image.";
+        return;
+    }
 
     // 3. Send to Google Sheets (GAS)
     // We need the Web App URL. For now we prompt or mock.
@@ -146,8 +144,8 @@ captureBtn.addEventListener('click', async () => {
     try {
         const payload = {
             studentId: studentId,
-            studentName: "Unknown (Lookup pending)", // ideally fetched
-            image: imageBase64 // sending high res to drive
+            studentName: "Unknown (Lookup pending)",
+            image: lowResBase64 // sending compressed image
         };
 
         // GAS usually requires no-cors for simple GET/POST from browser if not using specialized libs, 
@@ -169,4 +167,28 @@ captureBtn.addEventListener('click', async () => {
         statusMessage.innerText = "Error submitting: " + e.message;
     }
 });
+
+// Helper: Iteratively compress image until < maxBytes
+async function compressImageToSize(sourceCanvas, maxBytes) {
+    let quality = 0.7;
+    let scale = 0.5;
+    let resultBase64 = sourceCanvas.toDataURL('image/jpeg', quality);
+
+    // Initial check (rough estimation: base64 length * 0.75 = byte size)
+    while ((resultBase64.length * 0.75) > maxBytes && (quality > 0.1 || scale > 0.1)) {
+        const tempCanvas = document.createElement('canvas');
+        tempCanvas.width = sourceCanvas.width * scale;
+        tempCanvas.height = sourceCanvas.height * scale;
+        tempCanvas.getContext('2d').drawImage(sourceCanvas, 0, 0, tempCanvas.width, tempCanvas.height);
+
+        resultBase64 = tempCanvas.toDataURL('image/jpeg', quality);
+
+        if ((resultBase64.length * 0.75) > maxBytes) {
+            // Reduce more aggressively
+            scale *= 0.8;
+            quality *= 0.8;
+        }
+    }
+    return resultBase64;
+}
 
