@@ -8,6 +8,9 @@ let faceMatcher;
 let stream;
 
 // 1. Load Models
+console.log('Debugging faceapi:', faceapi);
+console.log('Debugging faceapi.nets:', faceapi.nets);
+
 Promise.all([
     faceapi.nets.ssdMobilenetv1.loadFromUri('./models'),
     faceapi.nets.faceLandmark68.loadFromUri('./models'),
