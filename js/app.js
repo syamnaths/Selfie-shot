@@ -9,9 +9,9 @@ let stream;
 
 // 1. Load Models
 Promise.all([
-    faceapi.nets.ssdMobilenetv1.loadFromUri('/models'),
-    faceapi.nets.faceLandmark68.loadFromUri('/models'),
-    faceapi.nets.faceRecognition.loadFromUri('/models')
+    faceapi.nets.ssdMobilenetv1.loadFromUri('./models'),
+    faceapi.nets.faceLandmark68.loadFromUri('./models'),
+    faceapi.nets.faceRecognition.loadFromUri('./models')
 ]).then(loadLabeledImages).catch(err => {
     statusMessage.innerText = "Error loading models.";
     console.error(err);
@@ -113,13 +113,7 @@ captureBtn.addEventListener('click', async () => {
 
     // 3. Send to Google Sheets (GAS)
     // We need the Web App URL. For now we prompt or mock.
-    const gasUrl = localStorage.getItem('gas-url');
-
-    if (!gasUrl) {
-        const url = prompt("Please enter the Google Apps Script Web App URL:");
-        if (url) localStorage.setItem('gas-url', url);
-        else return;
-    }
+    const gasUrl = "https://script.google.com/macros/s/AKfycbwYZWy2fhaJl9XJ1986Ms9H1bIQGFf2iO_y1xSz2n597tGbjL12Ov4sfviVIyIObiS80A/exec";
 
     statusMessage.innerText = "Submitting attendance...";
 
@@ -133,7 +127,7 @@ captureBtn.addEventListener('click', async () => {
         // GAS usually requires no-cors for simple GET/POST from browser if not using specialized libs, 
         // but fetch with POST text/plain is standard for this hack.
 
-        await fetch(localStorage.getItem('gas-url'), {
+        await fetch(gasUrl, {
             method: "POST",
             mode: "no-cors",
             headers: {
