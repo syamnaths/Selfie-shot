@@ -5,8 +5,8 @@ function doPost(e) {
         const imageBase64 = data.image; // Expecting base64 string
 
         // CONFIGURATION
-        const FOLDER_ID = "1V4uFTdIWa-ue3z7d1JUe8daUApNIiSc2"; // *** UPDATE THIS ***
-        const SHEET_NAME = "Sheet1"; // Update if your sheet name is different
+        const FOLDER_ID = "1V4uFTdIWa-ue3z7d1JUe8daUApNIiSc2"; // Updated by user
+        const SHEET_NAME = "Sheet1";
 
         const ss = SpreadsheetApp.getActiveSpreadsheet();
         const sheet = ss.getSheetByName(SHEET_NAME);
@@ -18,7 +18,6 @@ function doPost(e) {
 
         // 1. Find Student Row
         // Assuming ID is in Column B (index 1) based on user prompt "Name ID Date Link"
-        // Adjust index if needed. Using user's example: Name=0, ID=1.
         let rowIndex = -1;
         for (let i = 1; i < values.length; i++) {
             if (values[i][1].toString().trim() === studentId) {
@@ -31,13 +30,33 @@ function doPost(e) {
             return ContentService.createTextOutput("Error: Student ID not found");
         }
 
-        // 2. Handle Date Column
+        // 2. Handle Date Column (Robust Check)
         const today = new Date();
         const dateString = (today.getMonth() + 1) + '/' + today.getDate() + '/' + today.getFullYear();
 
-        let dateColIndex = headers.indexOf(dateString);
+        let dateColIndex = -1;
+
+        // Check headers safely
+        for (let j = 0; j < headers.length; j++) {
+            let cellVal = headers[j];
+            let cellDateStr = "";
+
+            if (Object.prototype.toString.call(cellVal) === '[object Date]') {
+                // It's a date object, format it
+                cellDateStr = (cellVal.getMonth() + 1) + '/' + cellVal.getDate() + '/' + cellVal.getFullYear();
+            } else {
+                // It's a string or other
+                cellDateStr = cellVal.toString();
+            }
+
+            if (cellDateStr === dateString) {
+                dateColIndex = j;
+                break;
+            }
+        }
+
+        // If still not found, create new column
         if (dateColIndex === -1) {
-            // Create new column
             dateColIndex = headers.length;
             sheet.getRange(1, dateColIndex + 1).setValue(dateString);
         }
@@ -58,7 +77,6 @@ function doPost(e) {
                     DriveApp.getFileById(fileId[0]).setTrashed(true);
                 }
             } catch (err) {
-                // Ignore error if file doesn't exist or permissions issue
                 Logger.log("Could not delete old file: " + err);
             }
         }

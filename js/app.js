@@ -6,6 +6,7 @@ const canvas = document.getElementById('overlay');
 
 let faceMatcher;
 let stream;
+let currentMentor = "Unknown";
 
 // 1. Load Models
 console.log('Debugging faceapi:', faceapi);
@@ -103,8 +104,10 @@ function startRecognition() {
             // Logic: If match found AND confident
             if (result.label !== 'unknown') {
                 statusMessage.innerText = `Mentor Detected: ${result.label}`;
+                currentMentor = result.label;
             } else {
                 statusMessage.innerText = "Unknown person";
+                currentMentor = "Unknown";
             }
         });
     }, 100);
@@ -122,7 +125,18 @@ captureBtn.addEventListener('click', async () => {
     const captureCanvas = document.createElement('canvas');
     captureCanvas.width = video.videoWidth;
     captureCanvas.height = video.videoHeight;
-    captureCanvas.getContext('2d').drawImage(video, 0, 0);
+    const ctx = captureCanvas.getContext('2d');
+    ctx.drawImage(video, 0, 0);
+
+    // Watermark
+    ctx.font = 'bold 24px Arial';
+    ctx.fillStyle = 'white';
+    ctx.strokeStyle = 'black';
+    ctx.lineWidth = 1;
+    const timestamp = new Date().toLocaleString();
+    const watermarkText = `${timestamp} mentors: ${currentMentor}. Student id: ${studentId}`;
+    ctx.fillText(watermarkText, 20, captureCanvas.height - 20);
+    ctx.strokeText(watermarkText, 20, captureCanvas.height - 20);
 
     // 3. Compress Image to < 10KB
     let lowResBase64;
@@ -135,11 +149,13 @@ captureBtn.addEventListener('click', async () => {
         return;
     }
 
-    // 3. Send to Google Sheets (GAS)
+    // 4. Send to Google Sheets (GAS)
     // We need the Web App URL. For now we prompt or mock.
-    const gasUrl = "https://script.google.com/macros/s/AKfycbzkBNNWM4M2e5j9N9RuIscDnDV0KkvpNdaA67f_7vguXdNkD-d6YrQwipcAxk6h_pzECA/exec";
+    const gasUrl = "https://script.google.com/macros/s/AKfycbyNEjdZsFvx2X1QFmjMmr7xwcqcZm2wEIpFlBmIIWahM6UZJd_4YMrpUkBA-3BpWD79Nw/exec";
 
     statusMessage.innerText = "Submitting attendance...";
+    captureBtn.disabled = true; // Disable button
+    captureBtn.innerText = "Processing..."; // Change text
 
     try {
         const payload = {
@@ -165,6 +181,9 @@ captureBtn.addEventListener('click', async () => {
     } catch (e) {
         console.error(e);
         statusMessage.innerText = "Error submitting: " + e.message;
+    } finally {
+        captureBtn.disabled = false;
+        captureBtn.innerText = "Capture Attendance";
     }
 });
 
