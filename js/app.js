@@ -324,3 +324,20 @@ if (window.matchMedia('(display-mode: standalone)').matches) {
     if (installBtn) installBtn.classList.add('hidden');
 }
 
+// --- Accessibility: Click-Anywhere to Check In (Landscape) ---
+document.body.addEventListener('click', (e) => {
+    // Only applies if:
+    // 1. In Landscape mode
+    // 2. Click target is NOT an input or button (to avoid conflict)
+    // 3. Capture button is active
+
+    const isLandscape = window.innerWidth > window.innerHeight;
+    const isInteractive = e.target.closest('input') || e.target.closest('button') || e.target.closest('a');
+
+    if (isLandscape && !isInteractive && !captureBtn.disabled) {
+        // Visual feedback (optional ripple could go here, for now just click)
+        console.log("Landscape tap triggered check-in");
+        captureBtn.click();
+    }
+});
+
