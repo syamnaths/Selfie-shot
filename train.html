@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Selfie Shot - Trainer</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
+</head>
+
+<body>
+    <div class="container">
+        <h1>Trainer Mode</h1>
+
+        <div class="video-container">
+            <video id="video" width="640" height="480" autoplay muted></video>
+            <canvas id="overlay"></canvas>
+        </div>
+
+        <div class="controls">
+            <div class="input-group">
+                <label for="mentor-name">Mentor Name:</label>
+                <input type="text" id="mentor-name" placeholder="Enter Name">
+            </div>
+            <p id="status-message">Loading models...</p>
+            <button id="train-btn" disabled>Capture & Train</button>
+            <button id="save-btn" disabled>Save Models</button>
+        </div>
+    </div>
+
+    <script src="js/train.js"></script>
+</body>
+
+</html>
