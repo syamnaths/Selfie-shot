@@ -1,15 +1,15 @@
-const CACHE_NAME = 'selfie-shot-v5';
+const CACHE_NAME = 'selfie-shot-v8';
 const ASSETS = [
-    '/',
-    '/index.html',
-    '/train.html',
-    '/css/styles.css',
-    '/js/app.js',
-    '/js/train.js',
-    '/js/face-api.min.js',
-    '/manifest.json',
-    '/icons/icon-192x192.png',
-    '/icons/icon-512x512.png'
+    './',
+    './index.html',
+    './train.html',
+    './css/styles.css',
+    './js/app.js',
+    './js/train.js',
+    './js/face-api.min.js',
+    './manifest.json',
+    './icons/icon-192x192.png',
+    './icons/icon-512x512.png'
     // Add models if offline is critical, but they are large. 
     // For now, core app shell is prioritized.
 ];
