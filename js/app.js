@@ -24,16 +24,37 @@ Promise.all([
 async function loadLabeledImages() {
     statusMessage.innerText = "Loading mentor data...";
 
-    const localData = localStorage.getItem('mentor-faces');
-    if (!localData) {
+    let data = null;
+    try {
+        const response = await fetch('mentors/mentor_faces.json');
+        if (response.ok) {
+            data = await response.json();
+            console.log("Loaded mentor data from file.");
+        }
+    } catch (err) {
+        console.log("External mentor file not accessible.");
+    }
+
+    if (!data) {
+        const localData = localStorage.getItem('mentor-faces');
+        if (localData) {
+            try {
+                data = JSON.parse(localData);
+                console.log("Loaded mentor data from LocalStorage.");
+            } catch (e) {
+                console.error("Error parsing local storage data.", e);
+            }
+        }
+    }
+
+    if (!data) {
         statusMessage.innerText = "No training data found. Please run Training mode first.";
         startVideo(); // Start video anyway so user sees camera
         return;
     }
 
     try {
-        const parsed = JSON.parse(localData);
-        const labeledDescriptors = parsed.map(l => {
+        const labeledDescriptors = data.map(l => {
             // Convert plain arrays back to Float32Array
             const descriptors = l.descriptors.map(d => new Float32Array(d));
             return new faceapi.LabeledFaceDescriptors(l.label, descriptors);
@@ -43,7 +64,7 @@ async function loadLabeledImages() {
         startVideo();
     } catch (e) {
         console.error(e);
-        statusMessage.innerText = "Error parsing training data.";
+        statusMessage.innerText = "Error processing training data.";
         startVideo(); // Start video even on error
     }
 }
