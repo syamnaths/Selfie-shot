@@ -2,6 +2,7 @@ const video = document.getElementById('video');
 const captureBtn = document.getElementById('capture-btn');
 const studentIdInput = document.getElementById('student-id');
 const statusMessage = document.getElementById('status-message');
+const statusBadge = document.getElementById('status-badge');
 const canvas = document.getElementById('overlay');
 
 // Load saved ID
@@ -14,6 +15,17 @@ let faceMatcher;
 let stream;
 let currentMentor = "Unknown";
 
+// UI Helper: Update badge style
+function updateStatus(message, type = 'loading') {
+    statusMessage.innerText = message;
+    // Reset classes
+    statusBadge.className = 'status-badge';
+    // Add type class
+    if (type === 'success') statusBadge.classList.add('status-success');
+    else if (type === 'error') statusBadge.classList.add('status-error');
+    else statusBadge.classList.add('status-loading');
+}
+
 // 1. Load Models
 console.log('Debugging faceapi:', faceapi);
 console.log('Debugging faceapi.nets:', faceapi.nets);
@@ -23,13 +35,13 @@ Promise.all([
     faceapi.loadFaceLandmarkModel('./models'),
     faceapi.loadFaceRecognitionModel('./models')
 ]).then(loadLabeledImages).catch(err => {
-    statusMessage.innerText = "Error loading models.";
+    updateStatus("Error loading models.", 'error');
     console.error(err);
 });
 
 // 2. Load Trained Data
 async function loadLabeledImages() {
-    statusMessage.innerText = "Loading mentor data...";
+    updateStatus("Loading mentor data...", 'loading');
 
     let data = null;
     try {
@@ -55,7 +67,7 @@ async function loadLabeledImages() {
     }
 
     if (!data) {
-        statusMessage.innerText = "No training data found. Please run Training mode first.";
+        updateStatus("No training data found.", 'error');
         startVideo(); // Start video anyway so user sees camera
         return;
     }
@@ -71,7 +83,7 @@ async function loadLabeledImages() {
         startVideo();
     } catch (e) {
         console.error(e);
-        statusMessage.innerText = "Error processing training data.";
+        updateStatus("Error processing training data.", 'error');
         startVideo(); // Start video even on error
     }
 }
@@ -81,7 +93,7 @@ function startVideo() {
         .then(s => {
             stream = s;
             video.srcObject = s;
-            statusMessage.innerText = "Ready. Look at the camera.";
+            updateStatus("Ready. Look at the camera.", 'loading');
             captureBtn.disabled = false;
             startRecognition();
         })
@@ -89,11 +101,37 @@ function startVideo() {
 }
 
 function startRecognition() {
-    const displaySize = { width: video.width, height: video.height };
+    // Helper for robust dimensions
+    const getDisplaySize = () => {
+        const w = video.clientWidth || video.videoWidth;
+        const h = video.clientHeight || video.videoHeight;
+        return {
+            width: w > 0 ? w : 640,
+            height: h > 0 ? h : 480
+        };
+    };
+
+    // Initial Size
+    let displaySize = getDisplaySize();
     faceapi.matchDimensions(canvas, displaySize);
 
+    // Dynamic Resize Handler
+    window.addEventListener('resize', () => {
+        displaySize = getDisplaySize();
+        faceapi.matchDimensions(canvas, displaySize);
+    });
+
     setInterval(async () => {
-        if (!faceMatcher) return;
+        if (!faceMatcher || video.paused || video.ended) return;
+
+        // Ensure displaySize stays synced in loop just in case
+        if (video.clientWidth !== displaySize.width || video.clientHeight !== displaySize.height) {
+            displaySize = getDisplaySize();
+            // Only update if dimensions genuinely changed/valid
+            if (displaySize.width > 0 && displaySize.height > 0) {
+                faceapi.matchDimensions(canvas, displaySize);
+            }
+        }
 
         const detections = await faceapi.detectAllFaces(video).withFaceLandmarks().withFaceDescriptors();
         const resizedDetections = faceapi.resizeResults(detections, displaySize);
@@ -102,6 +140,8 @@ function startRecognition() {
 
         const results = resizedDetections.map(d => faceMatcher.findBestMatch(d.descriptor));
 
+        let foundMatch = false;
+
         results.forEach((result, i) => {
             const box = resizedDetections[i].detection.box;
             const drawBox = new faceapi.draw.DrawBox(box, { label: result.toString() });
@@ -109,13 +149,18 @@ function startRecognition() {
 
             // Logic: If match found AND confident
             if (result.label !== 'unknown') {
-                statusMessage.innerText = `Mentor Detected: ${result.label}`;
+                foundMatch = true;
                 currentMentor = result.label;
-            } else {
-                statusMessage.innerText = "Unknown person";
-                currentMentor = "Unknown";
             }
         });
+
+        if (foundMatch) {
+            updateStatus(`Mentor: ${currentMentor}`, 'success');
+        } else {
+            updateStatus("Unknown person", 'loading');
+            currentMentor = "Unknown";
+        }
+
     }, 100);
 }
 
@@ -123,7 +168,7 @@ captureBtn.addEventListener('click', async () => {
     // 0. Check Mentor
     if (!currentMentor || currentMentor === 'Unknown') {
         alert("Please take attendance with your mentor.");
-        statusMessage.innerText = "Attendance blocked: Mentor unknown.";
+        updateStatus("Attendance blocked: Mentor unknown.", 'error');
         return;
     }
 
@@ -161,17 +206,17 @@ captureBtn.addEventListener('click', async () => {
         console.log("Compressed image size:", Math.round(lowResBase64.length * 0.75 / 1024), "KB");
     } catch (err) {
         console.error("Compression failed:", err);
-        statusMessage.innerText = "Error processing image.";
+        updateStatus("Error processing image.", 'error');
         return;
     }
 
     // 4. Send to Google Sheets (GAS)
-    // We need the Web App URL. For now we prompt or mock.
     const gasUrl = "https://script.google.com/macros/s/AKfycbzjV8eSZFTj9WtMSRF9vB2dkbVPNN4NAyci7EoQea9a2GBJEHrUK3mTCGcw2Z7P19BAOQ/exec";
 
-    statusMessage.innerText = "Submitting attendance...";
+    updateStatus("Submitting attendance...", 'loading');
     captureBtn.disabled = true; // Disable button
-    captureBtn.innerText = "Processing..."; // Change text
+    const btnText = captureBtn.querySelector('.btn-text');
+    if (btnText) btnText.innerText = "Processing...";
 
     try {
         const payload = {
@@ -180,10 +225,7 @@ captureBtn.addEventListener('click', async () => {
             image: lowResBase64 // sending compressed image
         };
 
-        // GAS usually requires no-cors for simple GET/POST from browser if not using specialized libs, 
-        // but fetch with POST text/plain is standard for this hack.
-
-        await fetch(gasUrl, {
+        const response = await fetch(gasUrl, {
             method: "POST",
             mode: "no-cors",
             headers: {
@@ -192,14 +234,35 @@ captureBtn.addEventListener('click', async () => {
             body: JSON.stringify(payload)
         });
 
-        alert("Attendance submitted! (Check Sheet)");
-        statusMessage.innerText = "Submitted successfully.";
+        // alert("Attendance submitted! (Check Sheet)"); // Legacy alert removed for Kiosk feel
+        updateStatus("Submitted successfully.", 'success');
+
+        // --- Show Result Card ---
+        const resultCard = document.getElementById('result-card');
+        const rName = document.getElementById('result-name');
+        const rId = document.getElementById('result-id');
+        const rTime = document.getElementById('result-time');
+
+        if (resultCard) {
+            rName.innerText = "Attendance Marked"; // Or real name if we had it
+            rId.innerText = `ID: ${studentId}`;
+            rTime.innerText = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+            resultCard.classList.remove('hidden');
+
+            // Auto-hide after 3 seconds
+            setTimeout(() => {
+                resultCard.classList.add('hidden');
+            }, 3000);
+        }
+
     } catch (e) {
         console.error(e);
-        statusMessage.innerText = "Error submitting: " + e.message;
+        updateStatus("Error submitting: " + e.message, 'error');
     } finally {
         captureBtn.disabled = false;
-        captureBtn.innerText = "Capture Attendance";
+        if (btnText) btnText.innerText = "Check In";
+        studentIdInput.value = ''; // Clear input for next user
     }
 });
 

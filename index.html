@@ -3,29 +3,73 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Selfie Shot - Attendance</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/styles.css">
     <script src="js/face-api.min.js"></script>
 </head>
 
 <body>
-    <div class="container">
-        <h1>Selfie Attendance</h1>
-
-        <div class="video-container">
-            <video id="video" width="640" height="480" autoplay muted></video>
+    <div class="app-layout">
+        <!-- Main Video Area -->
+        <main class="video-wrapper">
+            <video id="video" autoplay muted playsinline></video>
             <canvas id="overlay"></canvas>
-        </div>
 
-        <div class="controls">
-            <div class="input-group">
-                <label for="student-id">Student ID:</label>
-                <input type="text" id="student-id" placeholder="Enter ID">
+            <!-- Kiosk Scanning Frame (Visual Only) -->
+            <div class="scanning-frame">
+                <div class="scan-corner top-left"></div>
+                <div class="scan-corner top-right"></div>
+                <div class="scan-corner bottom-left"></div>
+                <div class="scan-corner bottom-right"></div>
+                <div class="scan-line"></div>
             </div>
-            <p id="status-message">Loading models...</p>
-            <button id="capture-btn" disabled>Take Selfie</button>
-        </div>
+
+            <!-- Result Card Overlay (Hidden by default) -->
+            <div id="result-card" class="result-card hidden">
+                <div class="result-icon-container">
+                    <div class="result-icon">
+                        <!-- Checkmark SVG -->
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"
+                            stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="20 6 9 17 4 12"></polyline>
+                        </svg>
+                    </div>
+                </div>
+                <div class="result-info">
+                    <h2 id="result-name">Student Name</h2>
+                    <p id="result-id">ID: 12345</p>
+                    <div class="result-time" id="result-time">09:30 AM</div>
+                </div>
+                <div class="result-badge">Attendance Marked</div>
+            </div>
+
+            <!-- Floating Status Badge (Retained for loading states) -->
+            <div id="status-badge" class="status-badge status-loading" style="top: 15%;">
+                <span id="status-message">Initializing Camera...</span>
+            </div>
+        </main>
+
+        <!-- Kiosk Bottom Controls -->
+        <aside class="controls-panel kiosk-controls">
+            <div class="header" style="display: none;"> <!-- Hidden header for kiosk mode -->
+                <h1>Selfie Shot</h1>
+            </div>
+
+            <div class="input-group">
+                <label for="student-id" class="sr-only">Student ID</label>
+                <div style="display: flex; gap: 0.5rem;">
+                    <input type="text" id="student-id" placeholder="Enter ID Manually" autocomplete="off"
+                        style="background: rgba(255,255,255,0.9);">
+                    <button id="capture-btn" disabled style="width: auto; padding: 0 1.5rem; flex: 0 0 auto;">
+                        <span class="btn-text">Check In</span>
+                    </button>
+                </div>
+            </div>
+        </aside>
     </div>
 
     <script src="js/app.js"></script>

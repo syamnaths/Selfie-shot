@@ -3,29 +3,89 @@
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Selfie Shot - Trainer</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="css/styles.css">
     <script src="js/face-api.min.js"></script>
 </head>
 
 <body>
-    <div class="container">
-        <h1>Trainer Mode</h1>
-
-        <div class="video-container">
-            <video id="video" width="640" height="480" autoplay muted></video>
+    <div class="app-layout">
+        <!-- Main Video Area -->
+        <main class="video-wrapper">
+            <video id="video" autoplay muted playsinline></video>
             <canvas id="overlay"></canvas>
-        </div>
 
-        <div class="controls">
-            <div class="input-group">
-                <label for="mentor-name">Mentor Name:</label>
-                <input type="text" id="mentor-name" placeholder="Enter Name">
+            <!-- Floating Status Badge -->
+            <div id="status-badge" class="status-badge status-loading">
+                <span id="status-message">Loading models...</span>
             </div>
-            <p id="status-message">Loading models...</p>
-            <button id="train-btn" disabled>Capture & Train</button>
-            <button id="save-btn" disabled>Save Models</button>
+        </main>
+
+        <!-- Controls Panel -->
+        <aside class="controls-panel">
+            <div class="header">
+                <h1>Trainer Mode</h1>
+                <p>Register new Mentors</p>
+            </div>
+
+            <!-- Import Section (Floating Icon on Mobile) -->
+            <div class="import-section">
+                <label for="import-file" class="import-trigger" title="Load Existing Data">
+                    <!-- Simple Upload Icon (SVG or char) -->
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                        <polyline points="17 8 12 3 7 8"></polyline>
+                        <line x1="12" y1="3" x2="12" y2="15"></line>
+                    </svg>
+                </label>
+                <input type="file" id="import-file" accept=".json">
+            </div>
+
+            <div class="input-group">
+                <label for="mentor-name" class="sr-only">Mentor Name</label>
+                <div style="display: flex; gap: 0.5rem;">
+                    <input type="text" id="mentor-name" placeholder="Name" autocomplete="off" style="flex: 1;">
+                    <button id="select-mentor-btn"
+                        style="width: auto; padding: 0 1rem; background: var(--glass-border); border: 1px solid var(--border-color); color: var(--text-dark); cursor: pointer; font-size: 0.9rem;"
+                        title="Select from list">
+                        Select
+                    </button>
+                </div>
+            </div>
+
+            <!-- Known Mentors / Counter -->
+            <div id="capture-status" class="capture-status"
+                style="margin-top: 0; padding: 0.5rem; font-size: 0.8rem; background: transparent; text-align: left;">
+                Samples: <span id="sample-count" class="sample-count">0</span>
+            </div>
+
+            <!-- Action Row -->
+            <div class="action-row">
+                <button id="train-btn" disabled>
+                    <span class="btn-text">Capture</span>
+                </button>
+                <button id="save-btn" class="btn-success" disabled>
+                    <span class="btn-text">Save</span>
+                </button>
+            </div>
+        </aside>
+    </div>
+
+    <!-- Mentor Selection Modal -->
+    <div id="mentor-modal" class="modal-backdrop hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Select Mentor</h3>
+                <button id="close-modal" class="close-btn">&times;</button>
+            </div>
+            <div id="mentor-list" class="mentor-list">
+                <!-- Items injected by JS -->
+                <p class="empty-state">No mentors loaded yet.</p>
+            </div>
         </div>
     </div>
 
