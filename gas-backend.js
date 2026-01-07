@@ -1,4 +1,12 @@
 function doPost(e) {
+    const lock = LockService.getScriptLock();
+    // Wait for up to 30 seconds for other processes to finish.
+    const hasLock = lock.tryLock(30000);
+
+    if (!hasLock) {
+        return ContentService.createTextOutput("Error: Server is busy, please try again.");
+    }
+
     try {
         const data = JSON.parse(e.postData.contents);
         const studentId = data.studentId.toString().trim();
@@ -31,9 +39,6 @@ function doPost(e) {
 
         // 2. Handle Date Column (STRICT CHECK)
         const today = new Date();
-        // Format: M/d/yyyy (no leading zeros usually in Sheets default, but we'll stick to a standard)
-        // Actually, Sheets often converts to Date objects. 
-        // We will use Utilities.formatDate to match what we write.
         const TIMEZONE = ss.getSpreadsheetTimeZone();
         const dateString = Utilities.formatDate(today, TIMEZONE, "M/d/yyyy");
 
@@ -46,10 +51,9 @@ function doPost(e) {
             if (Object.prototype.toString.call(cellVal) === '[object Date]') {
                 cellDateStr = Utilities.formatDate(cellVal, TIMEZONE, "M/d/yyyy");
             } else {
-                cellDateStr = cellVal.toString();
+                cellDateStr = cellVal.toString().trim();
             }
 
-            // Loose comparison for single digit days/months if needed, but usually exact match works if format aligns
             if (cellDateStr === dateString) {
                 dateColIndex = j;
                 break;
@@ -93,5 +97,7 @@ function doPost(e) {
 
     } catch (f) {
         return ContentService.createTextOutput("Error: " + f.toString());
+    } finally {
+        lock.releaseLock();
     }
 }
