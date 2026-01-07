@@ -27,6 +27,7 @@ async function loadLabeledImages() {
     const localData = localStorage.getItem('mentor-faces');
     if (!localData) {
         statusMessage.innerText = "No training data found. Please run Training mode first.";
+        startVideo(); // Start video anyway so user sees camera
         return;
     }
 
@@ -43,6 +44,7 @@ async function loadLabeledImages() {
     } catch (e) {
         console.error(e);
         statusMessage.innerText = "Error parsing training data.";
+        startVideo(); // Start video even on error
     }
 }
 
