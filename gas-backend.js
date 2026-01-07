@@ -37,24 +37,42 @@ function doPost(e) {
             return ContentService.createTextOutput("Error: Student ID not found");
         }
 
-        // 2. Handle Date Column (STRICT CHECK)
+        // 2. Handle Date Column (ROBUST CHECK)
+        // We match by components (Day, Month, Year) to avoid Time/String confusion.
         const today = new Date();
         const TIMEZONE = ss.getSpreadsheetTimeZone();
-        const dateString = Utilities.formatDate(today, TIMEZONE, "M/d/yyyy");
+
+        // Target components
+        const tDay = parseInt(Utilities.formatDate(today, TIMEZONE, "d"), 10);
+        const tMonth = parseInt(Utilities.formatDate(today, TIMEZONE, "M"), 10);
+        const tYear = parseInt(Utilities.formatDate(today, TIMEZONE, "yyyy"), 10);
+        const targetDateStr = `${tMonth}/${tDay}/${tYear}`; // M/d/yyyy
 
         let dateColIndex = -1;
 
         for (let j = 0; j < headers.length; j++) {
-            let cellVal = headers[j];
-            let cellDateStr = "";
+            const val = headers[j];
+            let hDay, hMonth, hYear;
 
-            if (Object.prototype.toString.call(cellVal) === '[object Date]') {
-                cellDateStr = Utilities.formatDate(cellVal, TIMEZONE, "M/d/yyyy");
+            if (Object.prototype.toString.call(val) === '[object Date]') {
+                // If header is a Date object, extract components using sheet's timezone
+                hDay = parseInt(Utilities.formatDate(val, TIMEZONE, "d"), 10);
+                hMonth = parseInt(Utilities.formatDate(val, TIMEZONE, "M"), 10);
+                hYear = parseInt(Utilities.formatDate(val, TIMEZONE, "yyyy"), 10);
             } else {
-                cellDateStr = cellVal.toString().trim();
+                // If header is String, try to parse M/d/yyyy
+                const s = val.toString().trim();
+                // Check if it looks like a date M/d/yyyy
+                const parts = s.split('/');
+                if (parts.length === 3) {
+                    hMonth = parseInt(parts[0], 10);
+                    hDay = parseInt(parts[1], 10);
+                    hYear = parseInt(parts[2], 10);
+                }
             }
 
-            if (cellDateStr === dateString) {
+            // Compare components
+            if (hDay === tDay && hMonth === tMonth && hYear === tYear) {
                 dateColIndex = j;
                 break;
             }
@@ -62,7 +80,10 @@ function doPost(e) {
 
         if (dateColIndex === -1) {
             dateColIndex = headers.length;
-            sheet.getRange(1, dateColIndex + 1).setValue(dateString); // Write string
+            const newHeaderCell = sheet.getRange(1, dateColIndex + 1);
+            // CRITICAL: Force Plain Text to prevent Google Sheets from auto-converting to Date object later
+            newHeaderCell.setNumberFormat("@");
+            newHeaderCell.setValue(targetDateStr);
         }
 
         // 3. Mark Attendance
@@ -86,7 +107,7 @@ function doPost(e) {
         // Save New Image
         const contentType = imageBase64.substring(5, imageBase64.indexOf(';'));
         const bytes = Utilities.base64Decode(imageBase64.substr(imageBase64.indexOf('base64,') + 7));
-        const blob = Utilities.newBlob(bytes, contentType, studentId + "_" + dateString + ".jpg");
+        const blob = Utilities.newBlob(bytes, contentType, studentId + "_" + targetDateStr.replace(/\//g, '-') + ".jpg");
 
         const folder = DriveApp.getFolderById(FOLDER_ID);
         const file = folder.createFile(blob);

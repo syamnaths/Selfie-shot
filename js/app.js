@@ -167,7 +167,7 @@ captureBtn.addEventListener('click', async () => {
 
     // 4. Send to Google Sheets (GAS)
     // We need the Web App URL. For now we prompt or mock.
-    const gasUrl = "https://script.google.com/macros/s/AKfycbxgSz5_2u5OpBeKdfwKpt3NAgah_iHqGDPJW0_Sq5Y9DA8O1XNjYY6Dcfyf5NGVQwhglw/exec";
+    const gasUrl = "https://script.google.com/macros/s/AKfycbzjV8eSZFTj9WtMSRF9vB2dkbVPNN4NAyci7EoQea9a2GBJEHrUK3mTCGcw2Z7P19BAOQ/exec";
 
     statusMessage.innerText = "Submitting attendance...";
     captureBtn.disabled = true; // Disable button
