@@ -5,7 +5,7 @@ function doPost(e) {
         const imageBase64 = data.image; // Expecting base64 string
 
         // CONFIGURATION
-        const FOLDER_ID = "YOUR_GOOGLE_DRIVE_FOLDER_ID"; // *** UPDATE THIS ***
+        const FOLDER_ID = "1V4uFTdIWa-ue3z7d1JUe8daUApNIiSc2"; // *** UPDATE THIS ***
         const SHEET_NAME = "Sheet1"; // Update if your sheet name is different
 
         const ss = SpreadsheetApp.getActiveSpreadsheet();
