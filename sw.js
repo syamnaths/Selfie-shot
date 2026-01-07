@@ -1,4 +1,4 @@
-const CACHE_NAME = 'selfie-shot-v3';
+const CACHE_NAME = 'selfie-shot-v4';
 const ASSETS = [
     '/',
     '/index.html',
