@@ -8,9 +8,9 @@ let labeledFaceDescriptors = [];
 
 // Load Models
 Promise.all([
-    faceapi.nets.ssdMobilenetv1.loadFromUri('./models'), // Ensure this path is correct
-    faceapi.nets.faceLandmark68.loadFromUri('./models'),
-    faceapi.nets.faceRecognition.loadFromUri('./models')
+    faceapi.loadSsdMobilenetv1Model('./models'), // Ensure this path is correct
+    faceapi.loadFaceLandmarkModel('./models'),
+    faceapi.loadFaceRecognitionModel('./models')
 ]).then(startVideo).catch(err => {
     console.error(err);
     statusMessage.innerText = "Error loading models: " + err;

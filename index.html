@@ -1,17 +1,18 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Selfie Shot - Attendance</title>
     <link rel="stylesheet" href="css/styles.css">
-    <!-- Using CDN for face-api.js for now -->
-    <script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script> 
+    <script src="js/face-api.min.js"></script>
 </head>
+
 <body>
     <div class="container">
         <h1>Selfie Attendance</h1>
-        
+
         <div class="video-container">
             <video id="video" width="640" height="480" autoplay muted></video>
             <canvas id="overlay"></canvas>
@@ -29,4 +30,5 @@
 
     <script src="js/app.js"></script>
 </body>
+
 </html>

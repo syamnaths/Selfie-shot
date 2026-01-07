@@ -12,9 +12,9 @@ console.log('Debugging faceapi:', faceapi);
 console.log('Debugging faceapi.nets:', faceapi.nets);
 
 Promise.all([
-    faceapi.nets.ssdMobilenetv1.loadFromUri('./models'),
-    faceapi.nets.faceLandmark68.loadFromUri('./models'),
-    faceapi.nets.faceRecognition.loadFromUri('./models')
+    faceapi.loadSsdMobilenetv1Model('./models'),
+    faceapi.loadFaceLandmarkModel('./models'),
+    faceapi.loadFaceRecognitionModel('./models')
 ]).then(loadLabeledImages).catch(err => {
     statusMessage.innerText = "Error loading models.";
     console.error(err);
