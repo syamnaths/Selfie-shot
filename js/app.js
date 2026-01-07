@@ -189,15 +189,72 @@ captureBtn.addEventListener('click', async () => {
     const ctx = captureCanvas.getContext('2d');
     ctx.drawImage(video, 0, 0);
 
-    // Watermark
+    // --- Watermark & Smiley Logic ---
+    const timestamp = new Date().toLocaleString();
+
+    // Smiley Face (Top Right)
+    const smileyX = captureCanvas.width - 60;
+    const smileyY = 60;
+    const radius = 30;
+
+    // Face
+    ctx.beginPath();
+    ctx.arc(smileyX, smileyY, radius, 0, Math.PI * 2, true);
+    ctx.fillStyle = "yellow";
+    ctx.fill();
+    ctx.lineWidth = 3;
+    ctx.strokeStyle = "black";
+    ctx.stroke();
+
+    // Eyes
+    ctx.beginPath();
+    ctx.arc(smileyX - 10, smileyY - 10, 4, 0, Math.PI * 2, true);
+    ctx.arc(smileyX + 10, smileyY - 10, 4, 0, Math.PI * 2, true);
+    ctx.fillStyle = "black";
+    ctx.fill();
+
+    // Mouth
+    ctx.beginPath();
+    ctx.arc(smileyX, smileyY, 20, 0, Math.PI, false);
+    ctx.stroke();
+
+
+    // 3-Line Watermark logic
     ctx.font = 'bold 24px Arial';
     ctx.fillStyle = 'white';
     ctx.strokeStyle = 'black';
     ctx.lineWidth = 1;
-    const timestamp = new Date().toLocaleString();
-    const watermarkText = `${timestamp} mentors: ${currentMentor}. Student id: ${studentId}`;
-    ctx.fillText(watermarkText, 20, captureCanvas.height - 20);
-    ctx.strokeText(watermarkText, 20, captureCanvas.height - 20);
+    ctx.shadowColor = "black";
+    ctx.shadowBlur = 2;
+
+    // Bottom-Left Alignment
+    const lineX = 20;
+    const lineHeight = 30;
+    const startY = captureCanvas.height - 20;
+
+    const line1 = `Time: ${timestamp}`;
+    const line2 = `Mentor: ${currentMentor}`;
+    const line3 = `ID: ${studentId}`;
+
+    // Draw lines (stacked upwards)
+    ctx.fillText(line3, lineX, startY);
+    ctx.strokeText(line3, lineX, startY);
+
+    ctx.fillText(line2, lineX, startY - lineHeight);
+    ctx.strokeText(line2, lineX, startY - lineHeight);
+
+    ctx.fillText(line1, lineX, startY - (lineHeight * 2));
+    ctx.strokeText(line1, lineX, startY - (lineHeight * 2));
+
+
+    // Prepare Download Link
+    const finalImageURL = captureCanvas.toDataURL('image/png');
+    const downloadLink = document.getElementById('download-link');
+    if (downloadLink) {
+        downloadLink.href = finalImageURL;
+        downloadLink.download = `attendance_${studentId}_${Date.now()}.png`;
+        // Note: We don't remove hidden here, we do it in the success block
+    }
 
     // 3. Compress Image to < 10KB
     let lowResBase64;
@@ -242,18 +299,25 @@ captureBtn.addEventListener('click', async () => {
         const rName = document.getElementById('result-name');
         const rId = document.getElementById('result-id');
         const rTime = document.getElementById('result-time');
+        const downloadLink = document.getElementById('download-link');
 
         if (resultCard) {
             rName.innerText = "Attendance Marked"; // Or real name if we had it
             rId.innerText = `ID: ${studentId}`;
             rTime.innerText = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
+            // Ensure download link is visible
+            if (downloadLink) {
+                downloadLink.classList.remove('hidden');
+            }
+
             resultCard.classList.remove('hidden');
 
-            // Auto-hide after 3 seconds
+            // Auto-hide after 5 seconds (increased to allow time for download)
             setTimeout(() => {
                 resultCard.classList.add('hidden');
-            }, 3000);
+                if (downloadLink) downloadLink.classList.add('hidden');
+            }, 5000);
         }
 
     } catch (e) {
